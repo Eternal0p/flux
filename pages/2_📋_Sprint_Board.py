@@ -37,8 +37,8 @@ with col3:
     if st.button("🔄 Refresh", use_container_width=True):
         st.rerun()
 
-st.divider()
 
+st.divider()
 
 # Load tasks with loading indicator
 with st.spinner("📊 Loading tasks..."):
@@ -63,26 +63,85 @@ with st.spinner("📊 Loading tasks..."):
                 if task.get('File Type', '') == file_type_filter
             ]
         
-        # Group by status
-        tasks_by_status = {status: [] for status in TASK_STATUSES}
-        
-        for task in filtered_tasks:
-            status = task.get('Status', 'In Review')
-            if status in tasks_by_status:
-                tasks_by_status[status].append(task)
-        
         # Display board stats
         col1, col2, col3, col4, col5, col6 = st.columns(6)
         col1.metric("📊 Total", len(all_tasks), delta=None)
-        col2.metric("🟡 In Review", len(tasks_by_status.get('In Review', [])))
-        col3.metric("🟠 Passed Review", len(tasks_by_status.get('Passed In Review', [])))
-        col4.metric("🔵 In Stage", len(tasks_by_status.get('In Stage', [])))
-        col5.metric("🟣 Passed Stage", len(tasks_by_status.get('Passed In Stage', [])))
-        col6.metric("🟢 Done", len(tasks_by_status.get('Done', [])))
         
-        # Show filter results
-        if search_query or file_type_filter != "All Types":
-            st.caption(f"🔍 Showing {len(filtered_tasks)} of {len(all_tasks)} tasks")
+        # Calculate counts for display (from all filtered tasks, not just current page)
+        all_filtered_by_status = {status: [] for status in TASK_STATUSES}
+        for task in filtered_tasks:
+            status = task.get('Status', 'In Review')
+            if status in all_filtered_by_status:
+                all_filtered_by_status[status].append(task)
+        
+        col2.metric("🟡 In Review", len(all_filtered_by_status.get('In Review', [])))
+        col3.metric("🟠 Passed Review", len(all_filtered_by_status.get('Passed In Review', [])))
+        col4.metric("🔵 In Stage", len(all_filtered_by_status.get('In Stage', [])))
+        col5.metric("🟣 Passed Stage", len(all_filtered_by_status.get('Passed In Stage', [])))
+        col6.metric("🟢 Done", len(all_filtered_by_status.get('Done', [])))
+        
+        st.divider()
+        
+        # Pagination controls
+        pcol1, pcol2, pcol3, pcol4 = st.columns([2, 1, 1, 1])
+        
+        with pcol1:
+            if search_query or file_type_filter != "All Types":
+                st.caption(f"🔍 Showing {len(filtered_tasks)} of {len(all_tasks)} tasks")
+            else:
+                st.caption(f"📊 {len(filtered_tasks)} tasks")
+        
+        with pcol2:
+            items_per_page = st.selectbox(
+                "Per page",
+                options=[25, 50, 100, "All"],
+                index=1,
+                key="items_per_page"
+            )
+        
+        # Initialize pagination
+        if 'current_page' not in st.session_state:
+            st.session_state.current_page = 1
+        
+        # Calculate pagination
+        if items_per_page != "All":
+            total_pages = (len(filtered_tasks) + items_per_page - 1) // items_per_page
+            total_pages = max(1, total_pages)
+            
+            # Ensure current page is valid
+            if st.session_state.current_page > total_pages:
+                st.session_state.current_page = total_pages
+            
+            with pcol3:
+                if st.button("⬅️ Prev", disabled=st.session_state.current_page == 1, use_container_width=True):
+                    st.session_state.current_page -= 1
+                    st.rerun()
+            
+            with pcol4:
+                if st.button("Next ➡️", disabled=st.session_state.current_page >= total_pages, use_container_width=True):
+                    st.session_state.current_page += 1
+                    st.rerun()
+            
+            # Page indicator
+            if total_pages > 1:
+                st.caption(f"Page {st.session_state.current_page} of {total_pages}")
+            
+            # Calculate slice
+            start_idx = (st.session_state.current_page - 1) * items_per_page
+            end_idx = start_idx + items_per_page
+            
+            # Slice filtered tasks for current page
+            page_tasks = filtered_tasks[start_idx:end_idx]
+        else:
+            page_tasks = filtered_tasks
+        
+        # Re-group paginated tasks by status
+        tasks_by_status = {status: [] for status in TASK_STATUSES}
+        
+        for task in page_tasks:
+            status = task.get('Status', 'In Review')
+            if status in tasks_by_status:
+                tasks_by_status[status].append(task)
         
         st.divider()
         
