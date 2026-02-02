@@ -1,0 +1,10 @@
+streamlit
+google-generativeai
+gspread
+google-auth
+google-api-python-client
+Pillow
+python-dotenv
+reportlab
+oauth2client
+pandas
