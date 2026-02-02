@@ -170,7 +170,7 @@ def render_task_card(task: dict, sheets_service):
                 st.text(ai_summary[:200] + "..." if len(ai_summary) > 200 else ai_summary)
         
         # Actions
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         
         with col1:
             if evidence_link:
@@ -187,12 +187,69 @@ def render_task_card(task: dict, sheets_service):
             )
             
             if new_status != status:
-                try:
-                    sheets_service.update_task_status(task_id, new_status)
-                    st.success("✅ Updated!")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Failed: {str(e)}")
+                with st.spinner("Updating..."):
+                    try:
+                        sheets_service.update_task_status(task_id, new_status)
+                        from utils.toast import success_toast
+                        success_toast(f"Task moved to {new_status}")
+                        st.cache_data.clear()  # Clear cache to show update
+                        st.rerun()
+                    except Exception as e:
+                        from utils.toast import error_toast
+                        error_toast(f"Failed to update: {str(e)}")
+        
+        with col3:
+            # Edit button
+            if st.button("✏️", key=f"edit_{task_id}", use_container_width=True, help="Edit task"):
+                st.session_state[f"editing_{task_id}"] = True
+                st.rerun()
+        
+        # Edit modal
+        if st.session_state.get(f"editing_{task_id}", False):
+            with st.expander("✏️ Edit Task", expanded=True):
+                new_name = st.text_input(
+                    "Task Name",
+                    value=task_name,
+                    key=f"name_{task_id}"
+                )
+                
+                context_notes = task.get('Context Notes', '')
+                new_notes = st.text_area(
+                    "Context Notes",
+                    value=context_notes,
+                    key=f"notes_{task_id}",
+                    height=100
+                )
+                
+                col_save, col_cancel = st.columns(2)
+                
+                with col_save:
+                    if st.button("💾 Save", key=f"save_{task_id}", use_container_width=True):
+                        updates = {}
+                        if new_name != task_name:
+                            updates['Task Name'] = new_name
+                        if new_notes != context_notes:
+                            updates['Context Notes'] = new_notes
+                        
+                        if updates:
+                            with st.spinner("Saving..."):
+                                try:
+                                    sheets_service.update_task(task_id, updates)
+                                    from utils.toast import success_toast
+                                    success_toast("Task updated successfully!")
+                                    st.session_state[f"editing_{task_id}"] = False
+                                    st.cache_data.clear()
+                                    st.rerun()
+                                except Exception as e:
+                                    from utils.toast import error_toast
+                                    error_toast(f"Failed to save: {str(e)}")
+                        else:
+                            st.info("No changes to save")
+                
+                with col_cancel:
+                    if st.button("❌ Cancel", key=f"cancel_{task_id}", use_container_width=True):
+                        st.session_state[f"editing_{task_id}"] = False
+                        st.rerun()
         
         st.markdown("<br>", unsafe_allow_html=True)
 

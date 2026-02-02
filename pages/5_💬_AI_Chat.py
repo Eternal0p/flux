@@ -198,6 +198,55 @@ with st.sidebar:
         st.session_state.chat_messages = []
         st.rerun()
     
+    if len(st.session_state.chat_messages) > 0:
+        st.divider()
+        st.markdown("### 💾 Export Chat")
+        
+        # Export as markdown
+        if st.button("📄 Export as Markdown", use_container_width=True):
+            chat_md = f"# FLUX Chat History\n\n"
+            chat_md += f"**Exported:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+            chat_md += "---\n\n"
+            
+            for msg in st.session_state.chat_messages:
+                role = "👤 User" if msg["role"] == "user" else "🤖 Assistant"
+                chat_md += f"### {role}\n\n{msg['content']}\n\n"
+            
+            filename = f"flux_chat_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+            st.download_button(
+                label="⬇️ Download MD",
+                data=chat_md,
+                file_name=filename,
+                mime="text/markdown",
+                use_container_width=True
+            )
+        
+        # Export as JSON
+        if st.button("🔧 Export as JSON", use_container_width=True):
+            import json
+            chat_data = {
+                "timestamp": datetime.now().isoformat(),
+                "context_loaded": st.session_state.context_loaded,
+                "messages": st.session_state.chat_messages
+            }
+            filename = f"flux_chat_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            st.download_button(
+                label="⬇️ Download JSON",
+                data=json.dumps(chat_data, indent=2),
+                file_name=filename,
+                mime="application/json",
+                use_container_width=True
+            )
+        
+        # Copy entire conversation
+        if st.button("📋 Copy All", use_container_width=True):
+            full_conversation = ""
+            for msg in st.session_state.chat_messages:
+                role = "User" if msg["role"] == "user" else "Assistant"
+                full_conversation += f"{role}: {msg['content']}\n\n"
+            st.code(full_conversation, language=None)
+            st.info("👆 Use the copy button above")
+    
     st.divider()
     
     st.markdown("### 💡 Suggested Questions")

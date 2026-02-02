@@ -195,6 +195,38 @@ class GoogleSheetsService:
             log_error(logger, e, f"Failed to update task status: {task_id}")
             return False
     
+    def update_task(self, task_id: str, updates: Dict[str, str]) -> bool:
+        """
+        Update multiple fields of a task.
+        
+        Args:
+            task_id: ID of the task (row number)
+            updates: Dictionary of field names and new values
+            
+        Returns:
+            Success boolean
+        """
+        try:
+            start_time = datetime.now()
+            
+            # Find the row (task_id is the row number)
+            row_num = int(task_id) + 1  # +1 because row 1 is header
+            
+            # Update each field
+            for field_name, new_value in updates.items():
+                if field_name in SHEETS_HEADERS:
+                    col_index = SHEETS_HEADERS.index(field_name) + 1  # +1 for 1-indexed
+                    self.worksheet.update_cell(row_num, col_index, new_value)
+            
+            duration_ms = (datetime.now() - start_time).total_seconds() * 1000
+            log_api_call(logger, "Google Sheets", f"update_task: {task_id}", duration_ms)
+            
+            return True
+            
+        except Exception as e:
+            log_error(logger, e, f"Failed to update task: {task_id}")
+            return False
+    
     def get_tasks_by_date_range(self, start_date: datetime, end_date: datetime) -> List[Dict[str, str]]:
         """
         Get tasks within a date range.

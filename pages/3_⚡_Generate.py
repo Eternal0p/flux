@@ -58,27 +58,66 @@ with tab1:
                     gemini = get_gemini_processor()
                     csv_content = gemini.generate_test_cases(done_tasks)
                     
-                    st.success("✅ Test cases generated successfully!")
+                    # Store in session state
+                    st.session_state['test_cases_csv'] = csv_content
+                    st.session_state['test_cases_timestamp'] = datetime.now()
                     
-                    # Display preview
-                    st.markdown("### Preview")
-                    st.code(csv_content[:500] + "..." if len(csv_content) > 500 else csv_content)
+                    from utils.toast import success_toast
+                    success_toast("Test cases generated successfully!")
                     
-                    # Download button
-                    filename = f"test_cases_{datetime.now().strftime('%Y%m%d')}.csv"
-                    st.download_button(
-                        label="⬇️ Download CSV",
-                        data=csv_content,
-                        file_name=filename,
-                        mime="text/csv",
-                        use_container_width=True
-                    )
-                    
-                    logger.info(f"Generated test cases CSV: {filename}")
+                    logger.info(f"Generated test cases CSV")
                     
                 except Exception as e:
-                    st.error(f"❌ Generation failed: {str(e)}")
+                    from utils.toast import error_toast
+                    error_toast(f"Generation failed: {str(e)}")
                     logger.error(f"Test case generation error: {str(e)}")
+        
+        # Show preview if available
+        if 'test_cases_csv' in st.session_state:
+            csv_content = st.session_state['test_cases_csv']
+            timestamp = st.session_state.get('test_cases_timestamp', datetime.now())
+            
+            st.success(f"✅ Generated on {timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+            
+            # Tabs for different views
+            preview_tab1, preview_tab2 = st.tabs(["📊 Table View", "📝 Raw CSV"])
+            
+            with preview_tab1:
+                # Display as table
+                import pandas as pd
+                from io import StringIO
+                try:
+                    df = pd.read_csv(StringIO(csv_content))
+                    st.dataframe(df, use_container_width=True, height=400)
+                    st.caption(f"📊 {len(df)} test cases generated")
+                except Exception as e:
+                    st.code(csv_content[:500] + "..." if len(csv_content) > 500 else csv_content)
+            
+            with preview_tab2:
+                st.code(csv_content, language="csv")
+            
+            # Action buttons
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                filename = f"test_cases_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+                st.download_button(
+                    label="⬇️ Download CSV",
+                    data=csv_content,
+                    file_name=filename,
+                    mime="text/csv",
+                    use_container_width=True
+                )
+            
+            with col2:
+                if st.button("📋 Copy to Clipboard", use_container_width=True):
+                    st.code(csv_content, language=None)
+                    st.info("👆 Use the copy button in the code block above")
+            
+            with col3:
+                if st.button("🔄 Generate New", use_container_width=True):
+                    del st.session_state['test_cases_csv']
+                    st.rerun()
 
 # TAB 2: Requirement Document
 with tab2:
