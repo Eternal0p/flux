@@ -48,16 +48,50 @@ def get_sheets_id():
     return None
 
 def get_service_account_path():
-    """Get path to service account JSON file."""
+    """Get path to service account JSON file or dict from secrets."""
+    import json
+    import tempfile
+    
+    # Try environment variable first (local development)
     path = os.getenv('GOOGLE_SERVICE_ACCOUNT_JSON', 'service_account.json')
-    if path:
+    if os.path.exists(path):
         return path
+    
+    # Try Streamlit secrets (cloud deployment)
     try:
-        if hasattr(st, 'secrets') and 'GOOGLE_SERVICE_ACCOUNT_JSON' in st.secrets:
-            return st.secrets['GOOGLE_SERVICE_ACCOUNT_JSON']
+        if hasattr(st, 'secrets') and 'service_account' in st.secrets:
+            # Create a temporary file with the service account JSON
+            service_account_info = dict(st.secrets['service_account'])
+            
+            # Write to temp file
+            temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
+            json.dump(service_account_info, temp_file)
+            temp_file.close()
+            
+            return temp_file.name
+    except Exception as e:
+        pass
+    
+    return 'service_account.json'
+
+def get_service_account_info():
+    """Get service account as dictionary (for direct use)."""
+    import json
+    
+    # Try Streamlit secrets first
+    try:
+        if hasattr(st, 'secrets') and 'service_account' in st.secrets:
+            return dict(st.secrets['service_account'])
     except:
         pass
-    return 'service_account.json'
+    
+    # Try local file
+    path = os.getenv('GOOGLE_SERVICE_ACCOUNT_JSON', 'service_account.json')
+    if os.path.exists(path):
+        with open(path, 'r') as f:
+            return json.load(f)
+    
+    return None
 
 # File Upload Configuration
 ALLOWED_FILE_TYPES = {
@@ -112,8 +146,9 @@ def validate_credentials():
     if not get_sheets_id():
         missing.append("GOOGLE_SHEETS_ID")
     
-    service_account = get_service_account_path()
-    if not service_account or not os.path.exists(service_account):
-        missing.append("GOOGLE_SERVICE_ACCOUNT_JSON (file not found)")
+    # Check if service account info is available (either from file or secrets)
+    service_account_info = get_service_account_info()
+    if not service_account_info:
+        missing.append("GOOGLE_SERVICE_ACCOUNT_JSON (not configured)")
     
     return len(missing) == 0, missing
