@@ -1,0 +1,180 @@
+/* Mobile Optimizations for FLUX */
+
+/* Base mobile styles */
+@media (max-width: 768px) {
+
+    /* Larger, readable text */
+    body {
+        font-size: 16px !important;
+        line-height: 1.6 !important;
+    }
+
+    /* Touch-friendly buttons - Apple HIG 44px minimum */
+    .stButton>button {
+        min-height: 48px !important;
+        font-size: 16px !important;
+        padding: 12px 20px !important;
+        width: 100% !important;
+    }
+
+    /* Larger input fields */
+    .stTextInput>div>div>input,
+    .stTextArea>div>div>textarea {
+        font-size: 16px !important;
+        padding: 12px !important;
+        min-height: 44px !important;
+    }
+
+    /* Larger select boxes */
+    .stSelectbox select {
+        min-height: 44px !important;
+        font-size: 16px !important;
+        padding: 10px !important;
+    }
+
+    /* Stack columns vertically */
+    .row-widget.stHorizontal {
+        flex-direction: column !important;
+    }
+
+    /* Reduce container padding for more screen space */
+    .block-container {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        padding-top: 1rem !important;
+    }
+
+    /* Larger file uploader */
+    .stFileUploader {
+        font-size: 16px !important;
+    }
+
+    .stFileUploader>div>button {
+        min-height: 48px !important;
+        font-size: 16px !important;
+    }
+
+    /* Metrics - full width */
+    .stMetric {
+        width: 100% !important;
+        margin-bottom: 1rem !important;
+    }
+
+    /* Task cards - full width */
+    .element-container {
+        width: 100% !important;
+    }
+
+    /* Larger headers for readability */
+    h1 {
+        font-size: 1.8rem !important;
+    }
+
+    h2 {
+        font-size: 1.5rem !important;
+    }
+
+    h3 {
+        font-size: 1.3rem !important;
+    }
+
+    /* Sidebar - initially collapsed */
+    [data-testid="stSidebar"] {
+        width: 100% !important;
+    }
+
+    /* Better spacing for mobile */
+    .stMarkdown {
+        margin-bottom: 0.5rem !important;
+    }
+
+    /* Progress bar - full width */
+    .stProgress>div {
+        width: 100% !important;
+    }
+
+    /* Expander - larger touch target */
+    .streamlit-expanderHeader {
+        min-height: 48px !important;
+        font-size: 16px !important;
+    }
+
+    /* Chat input - larger */
+    .stChatInput>div>div>input {
+        font-size: 16px !important;
+        min-height: 44px !important;
+    }
+
+    /* Download button - full width */
+    .stDownloadButton>button {
+        width: 100% !important;
+        min-height: 48px !important;
+        font-size: 16px !important;
+    }
+
+    /* Tabs - slightly larger */
+    button[role="tab"] {
+        min-height: 44px !important;
+        font-size: 15px !important;
+    }
+
+    /* Checkbox - larger touch area */
+    .stCheckbox {
+        min-height: 44px !important;
+    }
+
+    /* Radio - larger touch area */
+    .stRadio>div {
+        min-height: 44px !important;
+    }
+}
+
+/* Extra small screens (phones < 480px) */
+@media (max-width: 480px) {
+
+    /* Even more compact */
+    .block-container {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+
+    /* Smaller headers to save space */
+    h1 {
+        font-size: 1.5rem !important;
+    }
+
+    h2 {
+        font-size: 1.3rem !important;
+    }
+
+    /* Compact metrics */
+    .stMetric label {
+        font-size: 0.9rem !important;
+    }
+
+    .stMetric [data-testid="stMetricValue"] {
+        font-size: 1.2rem !important;
+    }
+}
+
+/* Tablet portrait (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+
+    /* 2-column layout for metrics */
+    .row-widget.stHorizontal {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 1rem !important;
+    }
+}
+
+/* Print styles */
+@media print {
+
+    /* Hide navigation elements */
+    [data-testid="stSidebar"],
+    .stButton,
+    .stFileUploader {
+        display: none !important;
+    }
+}

@@ -3,3 +3,7 @@ maxUploadSize = 5000
 
 [browser]
 gatherUsageStats = false
+
+[theme]
+base = "dark"
+primaryColor = "#FF4B4B"
