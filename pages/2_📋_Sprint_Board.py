@@ -39,74 +39,84 @@ with col3:
 
 st.divider()
 
-# Load tasks
-try:
-    sheets_service = get_sheets_service()
-    all_tasks = sheets_service.get_all_tasks()
-    
-    # Apply filters
-    filtered_tasks = all_tasks
-    
-    if search_query:
-        filtered_tasks = [
-            task for task in filtered_tasks 
-            if search_query.lower() in task.get('Task Name', '').lower()
-        ]
-    
-    if file_type_filter != "All Types":
-        filtered_tasks = [
-            task for task in filtered_tasks 
-            if task.get('File Type', '') == file_type_filter
-        ]
-    
-    # Group by status
-    tasks_by_status = {status: [] for status in TASK_STATUSES}
-    
-    for task in filtered_tasks:
-        status = task.get('Status', 'In Review')
-        if status in tasks_by_status:
-            tasks_by_status[status].append(task)
-    
-    # Display board stats
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
-    col1.metric("Total Tasks", len(all_tasks))
-    col2.metric("In Review", len(tasks_by_status.get('In Review', [])))
-    col3.metric("Passed Review", len(tasks_by_status.get('Passed In Review', [])))
-    col4.metric("In Stage", len(tasks_by_status.get('In Stage', [])))
-    col5.metric("Passed Stage", len(tasks_by_status.get('Passed In Stage', [])))
-    col6.metric("Done", len(tasks_by_status.get('Done', [])))
-    
-    st.divider()
-    
-    # Kanban columns - 5 columns
-    cols = st.columns(5)
-    
-    status_colors = {
-        "In Review": "🟡",
-        "Passed In Review": "🟠",
-        "In Stage": "🔵",
-        "Passed In Stage": "🟣",
-        "Done": "🟢"
-    }
-    
-    for idx, status in enumerate(TASK_STATUSES):
-        with cols[idx]:
-            st.markdown(f"### {status_colors[status]} {status}")
-            st.markdown(f"*{len(tasks_by_status[status])} tasks*")
-            
-            tasks = tasks_by_status[status]
-            
-            if not tasks:
-                st.info(f"No tasks in {status}")
-            else:
-                for task in tasks:
-                    render_task_card(task, sheets_service)
-            
-            st.markdown("---")
 
-except Exception as e:
-    st.error(f"❌ Failed to load tasks: {str(e)}")
-    logger.error(f"Board error: {str(e)}")
+# Load tasks with loading indicator
+with st.spinner("📊 Loading tasks..."):
+    try:
+        from services.google_sheets import get_cached_tasks
+        
+        # Use cached data for better performance
+        all_tasks = get_cached_tasks()
+        
+        # Apply filters
+        filtered_tasks = all_tasks
+        
+        if search_query:
+            filtered_tasks = [
+                task for task in filtered_tasks 
+                if search_query.lower() in task.get('Task Name', '').lower()
+            ]
+        
+        if file_type_filter != "All Types":
+            filtered_tasks = [
+                task for task in filtered_tasks 
+                if task.get('File Type', '') == file_type_filter
+            ]
+        
+        # Group by status
+        tasks_by_status = {status: [] for status in TASK_STATUSES}
+        
+        for task in filtered_tasks:
+            status = task.get('Status', 'In Review')
+            if status in tasks_by_status:
+                tasks_by_status[status].append(task)
+        
+        # Display board stats
+        col1, col2, col3, col4, col5, col6 = st.columns(6)
+        col1.metric("📊 Total", len(all_tasks), delta=None)
+        col2.metric("🟡 In Review", len(tasks_by_status.get('In Review', [])))
+        col3.metric("🟠 Passed Review", len(tasks_by_status.get('Passed In Review', [])))
+        col4.metric("🔵 In Stage", len(tasks_by_status.get('In Stage', [])))
+        col5.metric("🟣 Passed Stage", len(tasks_by_status.get('Passed In Stage', [])))
+        col6.metric("🟢 Done", len(tasks_by_status.get('Done', [])))
+        
+        # Show filter results
+        if search_query or file_type_filter != "All Types":
+            st.caption(f"🔍 Showing {len(filtered_tasks)} of {len(all_tasks)} tasks")
+        
+        st.divider()
+        
+        # Kanban columns - 5 columns
+        cols = st.columns(5)
+        
+        status_colors = {
+            "In Review": "🟡",
+            "Passed In Review": "🟠",
+            "In Stage": "🔵",
+            "Passed In Stage": "🟣",
+            "Done": "🟢"
+        }
+        
+        for idx, status in enumerate(TASK_STATUSES):
+            with cols[idx]:
+                st.markdown(f"### {status_colors[status]} {status}")
+                st.markdown(f"*{len(tasks_by_status[status])} tasks*")
+                
+                tasks = tasks_by_status[status]
+                
+                if not tasks:
+                    st.info(f"No tasks in {status}")
+                else:
+                    for task in tasks:
+                        render_task_card(task, get_sheets_service())
+                
+                st.markdown("---")
+    
+    except Exception as e:
+        st.error(f"❌ **Failed to load tasks**")
+        st.error(f"**Error:** {str(e)}")
+        st.info("💡 **Try:**\n- Refresh the page\n- Check your internet connection\n- Verify Google Sheets access")
+        logger.error(f"Board error: {str(e)}")
 
 def render_task_card(task: dict, sheets_service):
     """Render a task card with actions."""

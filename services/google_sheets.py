@@ -227,12 +227,18 @@ class GoogleSheetsService:
             log_error(logger, e, "Failed to get tasks by date range")
             return []
 
-# Singleton instance
-_sheets_service = None
+import streamlit as st
 
+# Singleton instance with caching
+@st.cache_resource
 def get_sheets_service() -> GoogleSheetsService:
-    """Get or create Google Sheets service instance."""
-    global _sheets_service
-    if _sheets_service is None:
-        _sheets_service = GoogleSheetsService()
-    return _sheets_service
+    """Get or create cached Google Sheets service instance."""
+    return GoogleSheetsService()
+
+# Also cache task data for 60 seconds to reduce API calls
+@st.cache_data(ttl=60)
+def get_cached_tasks():
+    """Get cached task data (refreshes every 60 seconds)."""
+    service = get_sheets_service()
+    return service.get_all_tasks()
+

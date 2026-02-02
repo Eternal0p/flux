@@ -41,8 +41,8 @@ context_notes = st.text_area(
 )
 
 # Upload button
-if uploaded_file and st.button("🚀 Upload & Analyze", type="primary", use_container_width=True):
-    
+# Main upload handling logic
+if uploaded_file:
     # Validate file
     is_valid, message, category = validate_uploaded_file(uploaded_file)
     
@@ -53,117 +53,147 @@ if uploaded_file and st.button("🚀 Upload & Analyze", type="primary", use_cont
     st.success(f"✅ {message}")
     st.info(f"📁 File Category: **{category.title()}**")
     
-    # Progress tracking
-    progress_bar = st.progress(0)
-    status_text = st.empty()
+    # Display file info
+    st.markdown("### 📄 File Information")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("File Name", uploaded_file.name)
+    with col2:
+        file_size_mb = uploaded_file.size / (1024 * 1024)
+        st.metric("File Size", f"{file_size_mb:.2f} MB")
+    with col3:
+        st.metric("File Type", category.title())
     
-    try:
-        # Step 1: Upload to Google Drive
-        status_text.text("⬆️ Uploading to Google Drive...")
-        progress_bar.progress(20)
+    # Show image preview if applicable
+    if category == 'image':
+        try:
+            from PIL import Image
+            import io
+            # Read the file data once for PIL and then reset pointer for later use
+            file_data_for_preview = uploaded_file.read()
+            image = Image.open(io.BytesIO(file_data_for_preview))
+            uploaded_file.seek(0)  # Reset file pointer for subsequent reads
+            st.image(image, caption="Preview", use_column_width=True)
+        except Exception as e:
+            st.warning(f"Could not display image preview: {e}")
+            uploaded_file.seek(0) # Ensure pointer is reset even if preview fails
+    
+    st.divider()
+    
+    # Upload button
+    if st.button("🚀 Upload & Analyze", type="primary", use_container_width=True):
         
-        drive_service = get_drive_service()
+        # Progress tracking
+        progress_bar = st.progress(0)
+        status_text = st.empty()
         
-        # Get organized folder
-        folder_id = drive_service.organize_by_date(category)
-        
-        # Read file data
-        file_data = uploaded_file.read()
-        
-        # Upload file
-        drive_result = drive_service.upload_file(
-            file_data=file_data,
-            filename=uploaded_file.name,
-            mime_type=uploaded_file.type,
-            folder_id=folder_id
-        )
-        
-        evidence_link = drive_result['webViewLink']
-        
-        progress_bar.progress(40)
-        st.success(f"✅ Uploaded to Drive: [View Evidence]({evidence_link})")
-        
-        # Step 2: AI Analysis
-        status_text.text("🤖 Analyzing with Gemini AI...")
-        progress_bar.progress(50)
-        
-        gemini = get_gemini_processor()
-        
-        # Reset file pointer
-        file_data_for_ai = io.BytesIO(file_data)
-        
-        ai_result = gemini.process_file(
-            file_data=file_data_for_ai,
-            filename=uploaded_file.name,
-            file_category=category,
-            context_notes=context_notes
-        )
-        
-        progress_bar.progress(80)
-        
-        # Extract task name and summary
-        task_name = ai_result.get('task_name', f"Task from {uploaded_file.name}")
-        ai_summary = ai_result.get('summary', 'No summary available')
-        
-        st.success(f"✅ AI Analysis Complete")
-        
-        # Step 3: Save to Google Sheets
-        status_text.text("💾 Saving to Sprint Board...")
-        progress_bar.progress(90)
-        
-        sheets_service = get_sheets_service()
-        
-        task_data = {
-            'task_name': task_name,
-            'upload_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'status': 'In Review',
-            'file_type': category,
-            'evidence_link': evidence_link,
-            'ai_summary': str(ai_result),  # Store full JSON
-            'context_notes': context_notes
-        }
-        
-        task_id = sheets_service.create_task(task_data)
-        
-        progress_bar.progress(100)
-        status_text.text("✅ Complete!")
-        
-        # Display results
-        st.divider()
-        st.markdown("### 🎉 Task Created Successfully!")
-        
-        col1, col2 = st.columns([2, 1])
-        
-        with col1:
-            st.markdown(f"**Task Name:** {task_name}")
-            st.markdown(f"**Status:** 🟡 In Review")
-            st.markdown(f"**File Type:** {category.title()}")
+        try:
+            # Step 1: Upload to Google Drive
+            status_text.text("⬆️ Uploading to Google Drive...")
+            progress_bar.progress(20)
             
-            st.markdown("**AI Summary:**")
-            st.info(ai_summary)
+            drive_service = get_drive_service()
             
-            if context_notes:
-                st.markdown("**Your Notes:**")
-                st.text(context_notes)
-        
-        with col2:
-            st.markdown("**Quick Actions**")
-            st.link_button("👁️ View Evidence", evidence_link, use_container_width=True)
+            # Get organized folder
+            folder_id = drive_service.organize_by_date(category)
             
-            if st.button("➕ Upload Another", use_container_width=True):
-                st.rerun()
-        
-        # Show full AI response in expander
-        with st.expander("🔍 View Full AI Analysis"):
-            st.json(ai_result)
-        
-        logger.info(f"Successfully created task: {task_name} (ID: {task_id})")
-        
-    except Exception as e:
-        progress_bar.progress(0)
-        status_text.text("")
-        st.error(f"❌ Error: {str(e)}")
-        logger.error(f"Upload failed: {str(e)}")
+            # Read file data
+            file_data = uploaded_file.read()
+            
+            # Upload file
+            drive_result = drive_service.upload_file(
+                file_data=file_data,
+                filename=uploaded_file.name,
+                mime_type=uploaded_file.type,
+                folder_id=folder_id
+            )
+            
+            evidence_link = drive_result['webViewLink']
+            
+            progress_bar.progress(40)
+            st.success(f"✅ Uploaded to Drive: [View Evidence]({evidence_link})")
+            
+            # Step 2: AI Analysis
+            status_text.text("🤖 Analyzing with Gemini AI...")
+            progress_bar.progress(50)
+            
+            gemini = get_gemini_processor()
+            
+            # Reset file pointer for AI processing if it was read before
+            file_data_for_ai = io.BytesIO(file_data)
+            
+            ai_result = gemini.process_file(
+                file_data=file_data_for_ai,
+                filename=uploaded_file.name,
+                file_category=category,
+                context_notes=context_notes
+            )
+            
+            progress_bar.progress(80)
+            
+            # Extract task name and summary
+            task_name = ai_result.get('task_name', f"Task from {uploaded_file.name}")
+            ai_summary = ai_result.get('summary', 'No summary available')
+            
+            st.success(f"✅ AI Analysis Complete")
+            
+            # Step 3: Save to Google Sheets
+            status_text.text("💾 Saving to Sprint Board...")
+            progress_bar.progress(90)
+            
+            sheets_service = get_sheets_service()
+            
+            task_data = {
+                'task_name': task_name,
+                'upload_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'status': 'In Review',
+                'file_type': category,
+                'evidence_link': evidence_link,
+                'ai_summary': str(ai_result),  # Store full JSON
+                'context_notes': context_notes
+            }
+            
+            task_id = sheets_service.create_task(task_data)
+            
+            progress_bar.progress(100)
+            status_text.text("✅ Complete!")
+            
+            # Display results
+            st.divider()
+            st.markdown("### 🎉 Task Created Successfully!")
+            
+            col1, col2 = st.columns([2, 1])
+            
+            with col1:
+                st.markdown(f"**Task Name:** {task_name}")
+                st.markdown(f"**Status:** 🟡 In Review")
+                st.markdown(f"**File Type:** {category.title()}")
+                
+                st.markdown("**AI Summary:**")
+                st.info(ai_summary)
+                
+                if context_notes:
+                    st.markdown("**Your Notes:**")
+                    st.text(context_notes)
+            
+            with col2:
+                st.markdown("**Quick Actions**")
+                st.link_button("👁️ View Evidence", evidence_link, use_container_width=True)
+                
+                if st.button("➕ Upload Another", use_container_width=True):
+                    st.rerun()
+            
+            # Show full AI response in expander
+            with st.expander("🔍 View Full AI Analysis"):
+                st.json(ai_result)
+            
+            logger.info(f"Successfully created task: {task_name} (ID: {task_id})")
+            
+        except Exception as e:
+            progress_bar.progress(0)
+            status_text.text("")
+            st.error(f"❌ Error: {str(e)}")
+            logger.error(f"Upload failed: {str(e)}")
 
 # Information section
 if not uploaded_file:
