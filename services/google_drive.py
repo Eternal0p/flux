@@ -70,7 +70,8 @@ class GoogleDriveService:
             
             folder = self.service.files().create(
                 body=folder_metadata,
-                fields='id, name'
+                fields='id, name',
+                supportsAllDrives=True
             ).execute()
             
             logger.info(f"Created folder: {folder_name} (ID: {folder['id']})")
@@ -115,7 +116,8 @@ class GoogleDriveService:
             file = self.service.files().create(
                 body=file_metadata,
                 media_body=media,
-                fields='id, name, webViewLink, size, createdTime'
+                fields='id, name, webViewLink, size, createdTime',
+                supportsAllDrives=True
             ).execute()
             
             duration_ms = (datetime.now() - start_time).total_seconds() * 1000
@@ -182,7 +184,9 @@ class GoogleDriveService:
             results = self.service.files().list(
                 q=query,
                 fields='files(id, name)',
-                pageSize=1
+                pageSize=1,
+                supportsAllDrives=True,
+                includeItemsFromAllDrives=True
             ).execute()
             
             files = results.get('files', [])
