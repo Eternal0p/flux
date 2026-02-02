@@ -11,6 +11,7 @@ from utils.file_validator import validate_uploaded_file
 from services.google_drive import get_drive_service
 from services.google_sheets import get_sheets_service
 from services.gemini_processor import get_gemini_processor
+from utils.auth import require_auth
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
