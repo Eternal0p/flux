@@ -21,6 +21,9 @@ st.set_page_config(
     layout="wide"
 )
 
+# Require authentication
+require_auth()
+
 st.title("📤 Upload Evidence")
 st.markdown("Upload your evidence files and let AI analyze them instantly.")
 

@@ -6,6 +6,7 @@ A zero-cost multimodal task management system for QA and Development.
 import streamlit as st
 from datetime import datetime
 from config import validate_credentials
+from utils.auth import require_auth
 
 # Page configuration
 st.set_page_config(
@@ -14,6 +15,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Require authentication
+require_auth()
 
 # Custom CSS for mobile responsiveness
 st.markdown("""

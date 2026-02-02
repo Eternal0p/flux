@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from services.google_sheets import get_sheets_service
 from config import TASK_STATUSES
 from utils.logger import setup_logger
+from utils.auth import require_auth
 
 logger = setup_logger(__name__)
 
@@ -17,6 +18,9 @@ st.set_page_config(
     page_icon="📋",
     layout="wide"
 )
+
+# Require authentication
+require_auth()
 
 st.title("📋 Sprint Board")
 st.markdown("Manage your tasks in a Kanban-style board.")
