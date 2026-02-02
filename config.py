@@ -106,7 +106,7 @@ ALLOWED_EXTENSIONS = []
 for extensions in ALLOWED_FILE_TYPES.values():
     ALLOWED_EXTENSIONS.extend(extensions)
 
-MAX_FILE_SIZE_MB = 100  # Maximum file size in MB
+MAX_FILE_SIZE_MB = 5000  # Maximum file size in MB (5GB)
 
 # Task Statuses
 TASK_STATUSES = ["In Review", "Passed In Review", "In Stage", "Passed In Stage", "Done"]
