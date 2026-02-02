@@ -8,7 +8,7 @@ import hashlib
 
 # Password hash (for security - don't store plain text)
 # Password: 987654321
-PASSWORD_HASH = "c18f0a5262d2956fe5beace7bde6f2e0dcbbda83945b0b310cc0cc4abe29ee4e"
+PASSWORD_HASH = "8a9bcf1e51e812d0af8465a8dbcc9f741064bf0af3b3d08e6b0246437c19f7fb"
 
 def hash_password(password: str) -> str:
     """Hash a password using SHA256."""
