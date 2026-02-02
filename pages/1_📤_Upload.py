@@ -80,6 +80,10 @@ if uploaded_file:
     
     st.divider()
     
+    # Upload button section - MAKE IT OBVIOUS
+    st.markdown("### 🚀 Ready to Process")
+    st.info("👇 Click the button below to upload to Google Drive and analyze with AI")
+    
     # Upload button
     if st.button("🚀 Upload & Analyze", type="primary", use_container_width=True):
         
